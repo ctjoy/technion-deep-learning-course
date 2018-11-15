@@ -1,9 +1,8 @@
 import math
-
 import numpy as np
 import torch
 import torch.utils.data.sampler as sampler
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 
 def create_train_validation_loaders(dataset: Dataset, validation_ratio,
@@ -23,29 +22,21 @@ def create_train_validation_loaders(dataset: Dataset, validation_ratio,
 
     # TODO: Create two DataLoader instances, dl_train and dl_valid.
     # They should together represent a train/validation split of the given
-    # dataset. Make sure that:
+    # dataset. Make sure that
     # 1. Validation set size is validation_ratio * total number of samples.
     # 2. No sample is in both datasets. You can select samples at random
     #    from the dataset.
 
     # ====== YOUR CODE: ======
     indices = list(range(len(dataset)))
-
-    split = int(validation_ratio * len(dataset))
-    train_indices, valid_indices = indices[split:], indices[:split]
-
-    train_sampler = sampler.SubsetRandomSampler(train_indices)
-    valid_sampler = sampler.SubsetRandomSampler(valid_indices)
-
-    dl_train = DataLoader(dataset,
-                          batch_size=batch_size,
-                          sampler=train_sampler,
-                          num_workers=num_workers)
-
-    dl_valid = DataLoader(dataset,
-                          batch_size=batch_size,
-                          sampler=valid_sampler,
-                          num_workers=num_workers)
+    thres = int(len(dataset) * (1-validation_ratio))
+    print(thres)
+    train_indices = indices[:thres]
+    valid_indices = indices[thres:]
+    dl_train=torch.utils.data.DataLoader(Dataset, batch_size= batch_size,
+                        sampler=sampler.SubsetRandomSampler(indices=train_indices),num_workers=num_workers)
+    dl_valid =torch.utils.data.DataLoader(Dataset, batch_size=batch_size,
+                        sampler=sampler.SubsetRandomSampler(indices=valid_indices),num_workers=num_workers)
     # ========================
 
     return dl_train, dl_valid
