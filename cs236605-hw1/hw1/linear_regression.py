@@ -5,7 +5,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from pandas import DataFrame
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted, check_X_y
-
+import torch
 
 class LinearRegressor(BaseEstimator, RegressorMixin):
     """
@@ -30,7 +30,8 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        y_pred = np.dot(X, self.weights_)
+        y_pred = np.dot(X,self.weights_)
+        #y_pred(N,1)
         # ========================
 
         return y_pred
@@ -42,13 +43,20 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
         :param y: A tensor of shape (N,) where N is the batch size.
         """
         X, y = check_X_y(X, y)
-
+        # X(N,2), y(N,1)
         # TODO: Calculate the optimal weights using the closed-form solution
         # Use only numpy functions.
 
         w_opt = None
         # ====== YOUR CODE: ======
-        w_opt = np.dot(np.dot(np.linalg.inv(np.dot(X.T, X)), X.T), y)
+        # Take regularization into consideration
+        #w_opt = np.dot(np.linalg.inv(np.dot(np.transpose(X), X) / X.shape[0]
+             #                + self.reg_lambda * np.eye(X.shape[1])),
+             #                 np.dot(np.transpose(X),y) / X.shape[0])/2
+        print(X.shape)
+        w_opt = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
+        print(w_opt.shape)
+        #w_opt(2,1)
         # ========================
 
         self.weights_ = w_opt
@@ -74,8 +82,8 @@ class BiasTrickTransformer(BaseEstimator, TransformerMixin):
 
         xb = None
         # ====== YOUR CODE: ======
-        ones = np.ones(X.shape[0]).reshape(-1, 1)
-        xb = np.hstack((ones, X))
+        b = np.ones((X.shape[0],1))
+        xb = np.hstack((b,X))
         # ========================
 
         return xb
@@ -91,7 +99,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
+        #self.poly = PolynomialFeatures(degree=degree,include_bias=False)
         # ========================
 
     def fit(self, X, y=None):
@@ -110,11 +118,14 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # Note: You can count on the order of features in the Boston dataset
         # (this class is "Boston-specific"). For example X[:,1] is the second
         # feature ('ZN').
-
         X_transformed = None
         # ====== YOUR CODE: ======
-        poly = PolynomialFeatures(self.degree)
-        X_transformed = poly.fit_transform(X)
+        poly = PolynomialFeatures(degree=self.degree, include_bias=False)
+        #X_transformed = poly.fit_transform(X)
+        X_transformed_temp = poly.fit_transform(X)
+        #delete features with same values
+        X_transformed = np.unique(X_transformed_temp, axis=1)
+        #(156,119) 119=14*13/2+14+14
         # ========================
 
         return X_transformed
@@ -138,25 +149,16 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    mu = df.mean()
-    S = DataFrame()
-    corrs = {}
-
-    for i in df.columns:
-        S[i] = df[i].apply(lambda x: x - mu[i])
-
-    sigma_x = np.sqrt((S[target_feature] * S[target_feature]).sum())
-    for i in df.columns:
-        if i is not target_feature:
-            sigma_x_y = (S[target_feature] * S[i]).sum()
-            sigma_y = np.sqrt((S[i] * S[i]).sum())
-            denominator =  sigma_x * sigma_y
-            corrs[i] = sigma_x_y / denominator
-
-    corrs = sorted(corrs.items(), key=lambda kv: kv[1], reverse=True)
-    top_n = corrs[:n]
-    top_n_features = [i[0] for i in top_n]
-    top_n_corr = [i[1] for i in top_n]
+    num_columns = len(df.columns)
+    #14
+    #calculate correlation between all column vectors except target_feature
+    corrs = []
+    for i in range(num_columns - 1):
+        corrs_temp=df[target_feature].corr(df.iloc[:,i])
+        corrs.append(corrs_temp)
+    corrs_arr = np.abs(np.array(corrs))
+    top_n_corr = corrs_arr[corrs_arr.argsort()[-n:][::-1]]
+    top_n_features = df.columns.values[corrs_arr.argsort()[-n:][::-1]]
     # ========================
 
     return top_n_features, top_n_corr
@@ -190,10 +192,15 @@ def cv_best_hyperparams(model: BaseEstimator, X, y, k_folds,
     # - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
+
+    #from sklearn.model_selection import GridSearchCV
+    #print(model.get_params())
     parameters = {'bostonfeaturestransformer__degree':degree_range, 'linearregressor__reg_lambda':lambda_range}
     clf = sklearn.model_selection.GridSearchCV(model, parameters, cv=k_folds)
-    clf.fit(X, y)
+    clf.fit(X,y)
     best_params = clf.best_params_
+    #score, rsq = evaluate_accuracy(y,y_pred)
+    print(clf.cv_results_)
     # ========================
 
     return best_params
