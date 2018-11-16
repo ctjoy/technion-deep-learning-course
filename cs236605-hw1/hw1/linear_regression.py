@@ -53,9 +53,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
         #w_opt = np.dot(np.linalg.inv(np.dot(np.transpose(X), X) / X.shape[0]
              #                + self.reg_lambda * np.eye(X.shape[1])),
              #                 np.dot(np.transpose(X),y) / X.shape[0])/2
-        print(X.shape)
         w_opt = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
-        print(w_opt.shape)
         #w_opt(2,1)
         # ========================
 
@@ -99,6 +97,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
+        self.unique_indices = None
         #self.poly = PolynomialFeatures(degree=degree,include_bias=False)
         # ========================
 
@@ -124,7 +123,12 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         #X_transformed = poly.fit_transform(X)
         X_transformed_temp = poly.fit_transform(X)
         #delete features with same values
-        X_transformed = np.unique(X_transformed_temp, axis=1)
+        if self.unique_indices is not None:
+            X_transformed = X_transformed_temp[:, self.unique_indices]
+        else:
+            X_transformed, unique_indices = np.unique(X_transformed_temp, axis=1, return_index=True)
+            self.unique_indices = unique_indices
+
         #(156,119) 119=14*13/2+14+14
         # ========================
 
@@ -194,13 +198,12 @@ def cv_best_hyperparams(model: BaseEstimator, X, y, k_folds,
     # ====== YOUR CODE: ======
 
     #from sklearn.model_selection import GridSearchCV
-    #print(model.get_params())
     parameters = {'bostonfeaturestransformer__degree':degree_range, 'linearregressor__reg_lambda':lambda_range}
-    clf = sklearn.model_selection.GridSearchCV(model, parameters, cv=k_folds)
+    scorer = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error)
+    clf = sklearn.model_selection.GridSearchCV(model, parameters, cv=k_folds, scoring=scorer)
     clf.fit(X,y)
     best_params = clf.best_params_
     #score, rsq = evaluate_accuracy(y,y_pred)
-    print(clf.cv_results_)
     # ========================
 
     return best_params
