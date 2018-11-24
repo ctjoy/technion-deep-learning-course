@@ -53,8 +53,14 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
         #w_opt = np.dot(np.linalg.inv(np.dot(np.transpose(X), X) / X.shape[0]
              #                + self.reg_lambda * np.eye(X.shape[1])),
              #                 np.dot(np.transpose(X),y) / X.shape[0])/2
-        w_opt = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
-        #w_opt(2,1)
+        #pseudo_temp1 = np.dot(X.T, X) / float(X.shape[0])
+        pseudo_temp1 = np.dot(X.T, X)
+        pseudo_temp2 = np.add(pseudo_temp1, self.reg_lambda * np.eye(X.shape[1]))
+        pseudo_temp3 = np.linalg.inv(pseudo_temp2)
+
+        #w_opt = (np.dot(pseudo_temp3, np.dot(X.T, y))/ float(X.shape[0]))
+        w_opt = np.dot(pseudo_temp3, np.dot(X.T, y))
+        #w_opt = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose()).dot(y)
         # ========================
 
         self.weights_ = w_opt
@@ -199,10 +205,11 @@ def cv_best_hyperparams(model: BaseEstimator, X, y, k_folds,
 
     #from sklearn.model_selection import GridSearchCV
     parameters = {'bostonfeaturestransformer__degree':degree_range, 'linearregressor__reg_lambda':lambda_range}
-    scorer = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error)
+    scorer = sklearn.metrics.make_scorer(sklearn.metrics.r2_score)
     clf = sklearn.model_selection.GridSearchCV(model, parameters, cv=k_folds, scoring=scorer)
     clf.fit(X,y)
     best_params = clf.best_params_
+    #print
     #score, rsq = evaluate_accuracy(y,y_pred)
     # ========================
 

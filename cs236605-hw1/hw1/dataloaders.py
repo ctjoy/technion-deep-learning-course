@@ -33,9 +33,9 @@ def create_train_validation_loaders(dataset: Dataset, validation_ratio,
     print(thres)
     train_indices = indices[:thres]
     valid_indices = indices[thres:]
-    dl_train=torch.utils.data.DataLoader(Dataset, batch_size= batch_size,
+    dl_train=torch.utils.data.DataLoader(dataset, batch_size= batch_size,
                         sampler=sampler.SubsetRandomSampler(indices=train_indices),num_workers=num_workers)
-    dl_valid =torch.utils.data.DataLoader(Dataset, batch_size=batch_size,
+    dl_valid =torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                         sampler=sampler.SubsetRandomSampler(indices=valid_indices),num_workers=num_workers)
     # ========================
 
