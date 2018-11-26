@@ -199,7 +199,7 @@ def cv_best_hyperparams(model: BaseEstimator, X, y, k_folds,
 
     #from sklearn.model_selection import GridSearchCV
     parameters = {'bostonfeaturestransformer__degree':degree_range, 'linearregressor__reg_lambda':lambda_range}
-    scorer = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error)
+    scorer = sklearn.metrics.make_scorer(sklearn.metrics.r2_score)
     clf = sklearn.model_selection.GridSearchCV(model, parameters, cv=k_folds, scoring=scorer)
     clf.fit(X,y)
     best_params = clf.best_params_

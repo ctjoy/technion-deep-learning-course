@@ -1,4 +1,5 @@
 import torch
+import cs236605.plot as plot
 from torch import Tensor
 from torch.utils.data import DataLoader
 from collections import namedtuple
@@ -157,9 +158,9 @@ class LinearClassifier(object):
 
         # ====== YOUR CODE: ======
         if has_bias:
-            w_images = self.weights[:-1,:].reshape((self.n_classes, *img_shape))
+            w_images = torch.t(self.weights)[:,:-1].reshape((self.n_classes, *img_shape))
         else:
-            w_images = self.weights.reshape((self.n_classes, *img_shape))
+            w_images = torch.t(self.weights).reshape((self.n_classes, *img_shape))
         # ========================
 
         return w_images
