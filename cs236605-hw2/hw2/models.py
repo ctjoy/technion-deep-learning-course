@@ -44,6 +44,9 @@ class MLP(Block):
 
             blocks.append(ReLU())
 
+            if self.dropout != 0:
+                blocks.append(Dropout(self.dropout))
+
         blocks.append(Linear(hidden_features[-1], num_classes))
         # ========================
 
@@ -101,7 +104,12 @@ class ConvClassifier(nn.Module):
         # Use only dimension-preserving 3x3 convolutions. Apply 2x2 Max
         # Pooling to reduce dimensions.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        for i, f in enumerate(self.filters):
+            layers.append(nn.Conv3d(in_channels, in_channels, f))
+            layers.append(nn.ReLU())
+
+            if (i + 1) % self.pool_every == 0:
+                layers.append(nn.MaxPool2d(f))
 
         # ========================
         seq = nn.Sequential(*layers)
@@ -116,7 +124,16 @@ class ConvClassifier(nn.Module):
         # You'll need to calculate the number of features first.
         # The last Linear layer should have an output dimension of out_classes.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        in_features = 100
+        for i in range(len(self.hidden_dims)):
+            if i == 0:
+                layers.append(nn.Linear(in_features, self.hidden_dims[i]))
+            elif i == (len(self.hidden_dims) - 1):
+                layers.append(nn.Linear(self.hidden_dims[-1], self.out_classes))
+            else:
+                layers.append(nn.Linear(self.hidden_dims[i-1], self.hidden_dims[i]))
+
+            layers.append(nn.ReLU())
         # ========================
         seq = nn.Sequential(*layers)
         return seq
@@ -126,7 +143,8 @@ class ConvClassifier(nn.Module):
         # Extract features from the input, run the classifier on them and
         # return class scores.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        out = self.feature_extractor(x)
+        out = self.classifier(out)
         # ========================
         return out
 

@@ -121,8 +121,8 @@ class Linear(Block):
         #   - db, the gradient of the loss with respect to b
         # You should accumulate gradients in dw and db.
         # ====== YOUR CODE: ======
-        self.dw = torch.matmul(torch.t(dout), x)
-        self.db = torch.matmul(torch.t(dout), torch.ones(dout.shape[0]))
+        self.dw.set_(torch.matmul(torch.t(dout), x))
+        self.db.set_(torch.matmul(torch.t(dout), torch.ones(dout.shape[0])))
         dx = torch.matmul(dout, self.w)
         # ========================
 
@@ -208,17 +208,7 @@ class CrossEntropyLoss(Block):
         # Tip: to get a different column from each row of a matrix tensor m,
         # you can index it with m[range(num_rows), list_of_cols].
         # ====== YOUR CODE: ======
-
-        # Softmax activation
-        exp_scores = torch.exp(x)
-        probs = exp_scores/torch.sum(exp_scores, dim=1, keepdim=True)
-
-        # # Log loss of the correct class of each of our samples
-        correct_logprobs = -torch.log(probs[range(N), y])
-
-        # # Compute the average loss
-        loss = torch.sum(correct_logprobs)/N
-        # loss = torch.sum(-x[range(N), y] + torch.log(torch.sum(torch.exp(x), dim=1, keepdim=True)))
+        loss = torch.sum(-x[range(N), y] + torch.log(torch.sum(torch.exp(x), dim=1))) / N
         # ========================
 
         self.grad_cache['x'] = x
@@ -241,8 +231,8 @@ class CrossEntropyLoss(Block):
         # Softmax activation
         exp_scores = torch.exp(x)
         probs = exp_scores/torch.sum(exp_scores, dim=1, keepdim=True)
-
-        dx = dout * torch.matmul((-y).float(), 1 - probs) - torch.log(probs)
+        probs[range(N), y] -= 1
+        dx = (dout * probs) / N
         # ========================
 
         return dx
@@ -262,7 +252,12 @@ class Dropout(Block):
         # previous blocks, this block behaves differently a according to the
         # current mode (train/test).
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        if self.training_mode:
+            activated_index = torch.bernoulli(torch.full(x.shape, self.p)) / self.p
+            self.grad_cache['activated_index'] = activated_index
+            out = x * activated_index
+        else:
+            out = x
         # ========================
 
         return out
@@ -270,7 +265,16 @@ class Dropout(Block):
     def backward(self, dout):
         # TODO: Implement the dropout backward pass.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        activated_index = self.grad_cache['activated_index']
+
+        if self.training_mode:
+            dx = dout * activated_index
+        else:
+            # droped = (activated_index == torch.zeros_like(activated_index)).float()
+            # droped = torch.mul((activated_index == torch.zeros_like(activated_index)).float(), (1/self.p))
+            # activated = torch.mul(activated_index, (1 / self.p))
+            # dx = dout * (activated + droped)
+            dx = dout
         # ========================
 
         return dx
