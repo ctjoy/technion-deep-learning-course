@@ -185,10 +185,13 @@ class YourCodeNet(ConvClassifier):
             layers.append(nn.ReLU())
 
             if (i + 1) % self.pool_every == 0:
-                layers.append(nn.MaxPool2d(kernel_size=(2, 2)))
 
-                out_h = (out_h - 2) / 2 + 1
-                out_w = (out_w - 2) / 2 + 1
+                if ((out_w - 2) / 2 + 1) >= 1 or ((out_h - 2) / 2 + 1) >= 1:
+
+                    out_h = (out_h - 2) / 2 + 1
+                    out_w = (out_w - 2) / 2 + 1
+
+                    layers.append(nn.MaxPool2d(kernel_size=(2, 2)))
 
         self.classifier_in_features = int(out_h * out_w * self.filters[-1])
         # ========================
