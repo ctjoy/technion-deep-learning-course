@@ -58,11 +58,11 @@ improve after 10 epochs.
 """
 
 part2_q2 = r"""
-Yes,it is possible that while test loss to increase for a few epochs 
+Yes,it is possible that while test loss to increase for a few epochs
 while the test accuracy also increases.
 This is easily possible with cross entropy loss function that is sensitive to the
-distance between an incorrect prediction and the ground truth. 
-You can get 90% of the predictions correct, but if the misses are 
+distance between an incorrect prediction and the ground truth.
+You can get 90% of the predictions correct, but if the misses are
 ridiculously far off the mark, your loss value can increase.
 """
 # ==============
@@ -71,55 +71,35 @@ ridiculously far off the mark, your loss value can increase.
 # Part 3 answers
 
 part3_q1 = r"""
-**Your answer:**
+1. When layer increases, the speed of convergenc slows down and the training and test accuracy also reduces. When
+the number of layers is 2 ,the test accuracy achieves the highest which means that fewer parameters can
+fit the model better.
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+2. When L equals 16, the network is not trainable. Due to maxpool layer,if the number of layers is too
+many,the width and height of the last layer may be less than 1 and therefore the network will be non-trainable.
+There are two suggested ways for reducing such an effect. One is to set the number of layers less than a maximum value
+to prevent the width or height of the last layer less than 1.The other one is to get rid off maxpool layer when
+the number of layers reach the maximum value.
 """
 
 part3_q2 = r"""
-**Your answer:**
+The number of units indicate the complexity of the model. We can see from the graph that when increasing the number of units
+of neural network, the test accuracy firstly increase as 32 to 64 and then decrease sharply when it reaches 128 and finally increase when it reaches 256.
+When number of units reaches 64, the accuracy is the highest which means that model with such complexity fit the data best.
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+Compared the result of question 1, we can draw the conclusion that when the number of units increase, the test accuracy firstly
+increase because of increased complexity of model and then decrease due to overfitting.
 """
 
 part3_q3 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+When changing both the number of filters and increasing the number of layers, the test accuracy decrease greatly.
+When there are 16 layers, due to too many maxpooling layer, the size of the final layer is too small to provide effective
+information.
 """
 
 
 part3_q4 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+We add dropout layer and  layer after each relu layer in our own model.
+Dropout layer is used to reduce overfitting as shown in the final result.
 """
 # ==============
