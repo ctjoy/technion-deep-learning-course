@@ -166,6 +166,44 @@ class YourCodeNet(ConvClassifier):
     # For example, add batchnorm, dropout, skip connections, change conv
     # filter sizes etc.
     # ====== YOUR CODE: ======
-    # raise NotImplementedError()
-    # ========================
+    def _make_feature_extractor(self):
+        in_channels, in_h, in_w, = tuple(self.in_size)
 
+        layers = []
+        filters = self.filters.copy()
+        filters.insert(0, in_channels)
+
+        out_h = in_h
+        out_w = in_w
+
+        for i, (in_dim, out_dim) in enumerate(zip(filters, self.filters)):
+            layers.append(nn.Conv2d(in_dim, out_dim, kernel_size=(3, 3), padding=1))
+            layers.append(nn.Dropout2d(p=0.5))
+            layers.append(nn.ReLU())
+
+            if (i + 1) % self.pool_every == 0:
+                layers.append(nn.MaxPool2d(kernel_size=(2, 2)))
+
+                out_h = (out_h - 2) / 2 + 1
+                out_w = (out_w - 2) / 2 + 1
+
+        self.classifier_in_features = int(out_h * out_w * self.filters[-1])
+        # ========================
+        seq = nn.Sequential(*layers)
+        return seq
+
+    def _make_classifier(self):
+        in_channels, in_h, in_w, = tuple(self.in_size)
+
+        layers = []
+        hidden_dims = self.hidden_dims.copy()
+        hidden_dims.insert(0, self.classifier_in_features)
+
+        for in_dim, out_dim in zip(hidden_dims, self.hidden_dims):
+            layers.extend([nn.Linear(in_dim, out_dim), nn.ReLU()])
+
+        layers.append(nn.Linear(self.hidden_dims[-1], self.out_classes))
+        # ========================
+        seq = nn.Sequential(*layers)
+        return seq
+    # ========================
