@@ -67,7 +67,7 @@ def run_experiment(run_name, out_dir='./results', seed=None,
     filters = []
 
     for K in filters_per_layer:
-        filters.append(K * layers_per_block)
+        filters.extend(K * layers_per_block)
 
     # Create model, loss and optimizer instances
     model = model_cls(in_size,
