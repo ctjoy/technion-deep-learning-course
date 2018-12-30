@@ -196,7 +196,7 @@ class BlocksTrainer(Trainer):
         # ====== YOUR CODE: ======
         x = X.reshape(X.shape[0], -1)
         scores = self.model(x)
-        loss = self.loss_fn(scores, y)
+        loss = self.loss_fn(scores, y).numpy()
 
         self.optimizer.zero_grad()
 
@@ -206,7 +206,7 @@ class BlocksTrainer(Trainer):
 
         scores = self.model.forward(x)
         y_pred = torch.argmax(scores, dim=1)
-        num_correct = torch.sum(y == y_pred)
+        num_correct = torch.sum(y == y_pred).numpy()
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -220,9 +220,9 @@ class BlocksTrainer(Trainer):
         # ====== YOUR CODE: ======
         x = X.reshape(X.shape[0], -1)
         scores = self.model(x)
-        loss = self.loss_fn(scores, y)
+        loss = self.loss_fn(scores, y).numpy()
         y_pred = torch.argmax(scores, dim=1)
-        num_correct = torch.sum(y == y_pred)
+        num_correct = torch.sum(y == y_pred).numpy()
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -257,7 +257,8 @@ class TorchTrainer(Trainer):
         scores = self.model(X)
         loss = self.loss_fn(scores, y)
         y_pred = torch.argmax(scores, dim=1)
-        num_correct = torch.sum(y == y_pred)
+        num_correct = torch.sum(y == y_pred).to('cpu').detach().numpy()
+        loss = loss.to('cpu').detach().numpy().tolist()
         # ========================
 
         return BatchResult(loss, num_correct)
@@ -276,7 +277,8 @@ class TorchTrainer(Trainer):
             scores = self.model(X)
             loss = self.loss_fn(scores, y)
             y_pred = torch.argmax(scores, dim=1)
-            num_correct = torch.sum(y == y_pred)
+            num_correct = torch.sum(y == y_pred).to('cpu').detach().numpy()
+            loss = loss.to('cpu').detach().numpy().tolist()
             # ========================
 
         return BatchResult(loss, num_correct)

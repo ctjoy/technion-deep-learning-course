@@ -56,7 +56,38 @@ def run_experiment(run_name, out_dir='./results', seed=None,
     #  for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    x0,_ = ds_train[0]
+    in_size = x0.shape
+    num_classes = 10
+
+    # Get batch dataset
+    dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=False)
+    dl_test = DataLoader(ds_train, batch_size=bs_test, shuffle=False)
+
+    filters = []
+
+    for K in filters_per_layer:
+        filters.append(K * layers_per_block)
+
+    # Create model, loss and optimizer instances
+    model = model_cls(in_size,
+                      num_classes,
+                      filters=filters,
+                      pool_every=pool_every,
+                      hidden_dims=hidden_dims)
+
+    loss_fn = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    # Use TorchTrainer to run
+    trainer = training.TorchTrainer(model, loss_fn, optimizer, device)
+
+    fit_res = trainer.fit(dl_train,
+                          dl_test,
+                          num_epochs=epochs,
+                          checkpoints=checkpoints,
+                          early_stopping=early_stopping,
+                          max_batches=batches)
     # ========================
 
     save_experiment(run_name, out_dir, cfg, fit_res)
@@ -91,7 +122,7 @@ def parse_cli():
 
     # Experiment config
     sp_exp = sp.add_parser('run-exp', help='Run experiment with a single '
-                                           'configuration')
+                           'configuration')
     sp_exp.set_defaults(subcmd_fn=run_experiment)
     sp_exp.add_argument('--run-name', '-n', type=str,
                         help='Name of run and output file', required=True)
@@ -111,10 +142,10 @@ def parse_cli():
                         help='Maximal number of epochs', default=100)
     sp_exp.add_argument('--early-stopping', type=int,
                         help='Stop after this many epochs without '
-                             'improvement', default=3)
+                        'improvement', default=3)
     sp_exp.add_argument('--checkpoints', type=int,
                         help='Save model checkpoints to this file when test '
-                             'accuracy improves', default=None)
+                        'accuracy improves', default=None)
     sp_exp.add_argument('--lr', type=float,
                         help='Learning rate', default=1e-3)
     sp_exp.add_argument('--reg', type=int,

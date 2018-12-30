@@ -121,8 +121,8 @@ class Linear(Block):
         #   - db, the gradient of the loss with respect to b
         # You should accumulate gradients in dw and db.
         # ====== YOUR CODE: ======
-        self.dw.set_(torch.matmul(torch.t(dout), x))
-        self.db.set_(torch.matmul(torch.t(dout), torch.ones(dout.shape[0])))
+        self.dw.set_(self.dw + torch.matmul(torch.t(dout), x))
+        self.db.set_(self.db + torch.matmul(torch.t(dout), torch.ones(dout.shape[0])))
         dx = torch.matmul(dout, self.w)
         # ========================
 
