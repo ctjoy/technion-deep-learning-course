@@ -29,8 +29,8 @@ NUM_NODES=1
 NUM_CORES=2
 NUM_GPUS=1
 QUEUE=236605
-JOB_NAME="test_job"
-MAIL_USER="example@example.com"
+JOB_NAME="ctjoy_experiment"
+MAIL_USER="ctjoychen@gmail.com"
 MAIL_TYPE=ALL # Valid values are NONE, BEGIN, END, FAIL, REQUEUE, ALL
 
 ###
