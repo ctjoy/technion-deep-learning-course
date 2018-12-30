@@ -140,6 +140,6 @@ class RMSProp(Optimizer):
             # parameters tensor.
             # ====== YOUR CODE: ======
             dp.add_(self.reg * p)
-            r.add_(self.decay * r + (1 - self.decay) * dp * dp)
+            r.set_(self.decay * r + (1 - self.decay) * dp * dp)
             p.sub_((self.learn_rate / torch.sqrt(r + self.eps)) * dp)
             # ========================
