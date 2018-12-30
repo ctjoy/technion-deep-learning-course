@@ -28,14 +28,25 @@ in_size = x0.shape
 num_classes = 10
 print('input image size =', in_size)
 
-file_name = 'exp1_1_K32_L2'
-K = 32
-L = 2
-experiments.run_experiment(file_name,
-                           seed=seed,
-                           bs_train=50,
-                           batches=10,
-                           epochs=10,
-                           early_stopping=5,
-                           filters_per_layer=[K],
-                           layers_per_block=L)
+experiments = [
+    {
+        filename: 'exp1_1_K32_L2',
+        K: 32,
+        L: 2
+    },
+    {
+        filename: 'exp1_1_K32_L4',
+        K: 32,
+        L: 4
+    },
+]
+
+for e in experiments:
+    experiments.run_experiment(e['filename'],
+                               seed=seed,
+                               bs_train=12000,
+                               batches=256,
+                               epochs=10,
+                               early_stopping=5,
+                               filters_per_layer=[e['K']],
+                               layers_per_block=e['L'])

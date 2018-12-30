@@ -79,6 +79,14 @@ class Trainer(abc.ABC):
             epoch_result = self.test_epoch(dl_test, **kw)
             test_loss.extend(epoch_result.losses)
             test_acc.append(epoch_result.accuracy)
+
+            # if there is no improvement or nan loss then stop the training
+            if early_stopping:
+                losses = [float(l) for l in test_loss]
+                if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
+                    actual_num_epochs = epoch
+                    break
+        actual_num_epochs = epoch
             # ========================
 
         return FitResult(actual_num_epochs,
