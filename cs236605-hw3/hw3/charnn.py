@@ -22,7 +22,10 @@ def char_maps(text: str):
     # It's best if you also sort the chars before assigning indices, so that
     # they're in lexical order.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    #Delete the repeated string and sort the new string in lexical order
+    text_sorted = ''.join(sorted(set(text)))
+    idx_to_char = {i: text_sorted[i] for i in range(len(text_sorted))}
+    char_to_idx = {text_sorted[i]: i for i in range(len(text_sorted))}
     # ========================
     return char_to_idx, idx_to_char
 
@@ -38,7 +41,12 @@ def remove_chars(text: str, chars_to_remove):
     """
     # TODO: Implement according to the docstring.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    n_removed = 0
+    text_clean = ""
+    for char in text:
+        if char not in chars_to_remove:
+            text_clean = text_clean + char
+            n_removed = n_removed + 1
     # ========================
     return text_clean, n_removed
 
@@ -47,10 +55,10 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     """
     Embed a sequence of chars as a a tensor containing the one-hot encoding
     of each char. A one-hot encoding means that each char is represented as
-    a tensor of zeros with a single '1' element at the index in the tesnsor
+    a tensor of zeros with a single '1' element at the index in the tensor
     corresponding to the index of that char.
     :param text: The text to embed.
-    :param char_to_idx: Mapping from each char in the sequence to it's
+    :param char_to_idx: Mapping from each char in the sequence to its
     unique index.
     :return: Tensor of shape (N, D) where N is the length of the sequence
     and D is the number of unique chars in the sequence. The dtype of the
@@ -58,7 +66,18 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     """
     # TODO: Implement the embedding.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    integer_encoded = torch.IntTensor([char_to_idx[char] for char in text])
+    N = len(text)
+    D_temp = int(torch.max(integer_encoded))
+    D = D_temp + 1
+    tensor = torch.ones((N,D), dtype=torch.int8)
+    result_list = []
+    #integer encode input data
+    for value in integer_encoded:
+        letter = [0 for _ in range(D)]
+        letter[value] = 1
+        result_list.append(letter)
+    result = tensor.new_tensor(result_list)
     # ========================
     return result
 
@@ -75,7 +94,10 @@ def onehot_to_chars(embedded_text: Tensor, idx_to_char: dict) -> str:
     """
     # TODO: Implement the reverse-embedding.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    result = ""
+    index = torch.argmax(embedded_text,dim=1)
+    for i in range(len(embedded_text)):
+        result = result + idx_to_char[int(index[i])]
     # ========================
     return result
 
@@ -104,7 +126,12 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int,
     # 3. Create the labels tensor in a similar way and convert to indices.
     # Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    num_samples = (len(text) - 1) // seq_len
+    embedded_text = chars_to_onehot(text, char_to_idx)[0: seq_len * num_samples]
+    text_deleted = text[1: seq_len * num_samples + 1]
+    labels_all = torch.IntTensor([char_to_idx[char] for char in text_deleted])
+    samples = torch.stack(torch.split(embedded_text, seq_len, dim=0))
+    labels = torch.stack(torch.split(labels_all, seq_len, dim=0))
     # ========================
     return samples, labels
 
@@ -200,7 +227,22 @@ class MultilayerGRU(nn.Module):
         #     then call self.register_parameter() on them. Also make
         #     sure to initialize them. See functions in torch.nn.init.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        gate_size = 3 * h_dim
+        for layer in range(n_layers):
+            layer_input_size = in_dim if layer == 0 else h_dim
+            w_ih = torch.empty(gate_size, layer_input_size)
+            w_hh = torch.empty(gate_size, h_dim)
+            b_ih = torch.empty(gate_size)
+            b_hh = torch.empty(gate_size)
+            w_ih = nn.Parameter(torch.nn.init.uniform_(w_ih))
+            w_hh = nn.Parameter(torch.nn.init.uniform_(w_hh))
+            b_ih = nn.Parameter(torch.nn.init.constant_(b_ih,1))
+            b_hh = nn.Parameter(torch.nn.init.constant_(b_hh,1))
+            layer_params.append([w_ih, w_hh, b_ih, b_hh])
+            self.dropout_layer = nn.Dropout(p=dropout)
+        self.add_module("Linear",nn.Linear(h_dim,out_dim))
+        self.Linear.weight = torch.nn.Parameter(torch.zeros(in_dim,h_dim))
+        self.Linear.bias = torch.nn.Parameter(torch.ones(64))
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor=None):
@@ -235,6 +277,12 @@ class MultilayerGRU(nn.Module):
         # Tip: You can use torch.stack() to combine multiple tensors into a
         # single tensor in a differentiable manner.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        z_t = torch.nn.Sigmoid(XW+HW+b)
+        r_t = torch.nn.Sigmoid(XW+HW+b)
+        g_t = torch.tanh(XW+HW+B)
+        h_t = z * h_tm1 + (1 - z) * hh
+        #layer_output =
+        #hidden_state =
         # ========================
         return layer_output, hidden_state
