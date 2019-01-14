@@ -25,30 +25,38 @@ class EncoderCNN(nn.Module):
         pool1 ---> H/2, W/2
         batch_norm1
         relu1 
-        conv2 ---> kernel size: (5,5),S=2 ,P=0, D=1  n_filters:128 
+        conv2 ---> kernel size: (5,5),S=2 ,P=2, D=1  n_filters:128 
         pool2 ---> H/4,W/4
         batch_norm2 
         relu2
-        conv3 ---> kernel size: (5,5),S=2 ,P=0, D=1  n_filters:256
+        conv3 ---> kernel size: (5,5),S=2 ,P=2, D=1  n_filters:256
         pool3 ---> H/8,W/8
         batch_norm3 ---> 
         relu3
-        FC1 --> H/8*W/8*255
-        batch_norm4 --->
+        conv4 ---> kernel size: (5,5),S=2 ,P=2, D=1  n_filters:1024
+        pool4 ---> H/16,W/16
+        batch_norm4 ---> 
         relu4
+        #FC1 --> H/16*W/16*1024
+        #batch_norm4 --->
+        #relu4
         """
 
-        self.filters = [64,128,out_channels]
-        filters = self.filters.copy()
-        filters.insert(0, in_channels)
+        self.filters = [64,128,256]
+        in_filters = self.filters.copy()
+        in_filters.insert(0, in_channels)
+        out_filters = self.filters.copy()
+        out_filters.insert(3,out_channels)
+        self.kernel_sz = 5
+        self.pool_sz = 2
         # H_in = 64
         # W_in = 64
         # H_out = H_in
         # W_out = W_in
 
-        for i, (in_dim, out_dim) in enumerate(zip(filters, self.filters)):
-            modules.append(nn.Conv2d(in_dim, out_dim, kernel_size=(5, 5), padding=2, stride=1))
-            modules.append(nn.MaxPool2d(kernel_size=(2, 2)))
+        for i, (in_dim, out_dim) in enumerate(zip(in_filters, out_filters)):
+            modules.append(nn.Conv2d(in_dim, out_dim, kernel_size = self.kernel_sz, padding=2, stride=1))
+            modules.append(nn.MaxPool2d(kernel_size = self.pool_sz))
             modules.append(nn.BatchNorm2d(out_dim))
             modules.append(nn.ReLU())
 
@@ -80,14 +88,21 @@ class DecoderCNN(nn.Module):
         # Output should be a batch of images, with same dimensions as the
         # inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        self.filters = [in_channels, 128, 64]
-        filters = [128,64,out_channels]
+        self.filters = [256, 128, 64]
+        self.kernel_sz = 5
+        self.unpool_sz = 2
+        in_filters = self.filters.copy()
+        in_filters.insert(0, in_channels)
+        print(in_filters)
+        out_filters = self.filters.copy()
+        out_filters.insert(3, out_channels)
+        print(out_filters)
 
-        for i, (in_dim, out_dim) in enumerate(zip(self.filters, filters)):
+        for i, (in_dim, out_dim) in enumerate(zip(in_filters, out_filters)):
             modules.append(nn.ReLU())
             modules.append(nn.BatchNorm2d(in_dim))
-            modules.append(nn.Upsample(scale_factor=2, mode='bilinear'))
-            modules.append(nn.Conv2d(in_dim, out_dim, kernel_size=(5, 5), padding=2, stride=1))
+            modules.append(nn.Upsample(scale_factor=self.unpool_sz, mode='bilinear'))
+            modules.append(nn.Conv2d(in_dim, out_dim, kernel_size=self.kernel_sz, padding=2, stride=1))
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -115,8 +130,19 @@ class VAE(nn.Module):
 
         # TODO: Add parameters needed for encode() and decode().
         # ====== YOUR CODE: ======
-        self.linear_encode = torch.nn.Linear(in_size[0]*in_size[1]*in_size[2], z_dim)
-        self.linear_decode = torch.nn.Linear(z_dim,in_size[0] * in_size[1] * in_size[2])
+        #self.hidden_dim = in_size[0] * in_size[1] * in_size[2]
+        #self.h_shape =(in_size[0], in_size[1], in_size[2])
+        #Get the dimension of the feature output
+        device = next(self.parameters()).device
+        x = torch.randn(1,*in_size, device=device)
+        h = features_encoder(x)
+        self.h_shape = h.shape[1:]
+        self.hidden_dim = torch.zeros(self.h_shape).numel()
+
+
+        self.ln_u = torch.nn.Linear(self.hidden_dim, z_dim)
+        self.ln_logvar = torch.nn.Linear(self.hidden_dim, z_dim)
+        self.ln_rec = torch.nn.Linear(z_dim, self.hidden_dim)
         self.in_size = in_size
         # ========================
 
@@ -137,12 +163,15 @@ class VAE(nn.Module):
         # log_sigma2 (mean and log variance) of the posterior p(z|x).
         # 2. Apply the reparametrization trick.
         # ====== YOUR CODE: ======
-        h=x.reshape(1,-1)
-        mu = self.linear_encode(h)
-        log_sigma2 =self.linear_encode(h)
+        #h = x.reshape(-1,self.hidden_dim)
+        h = self.features_encoder(x)
+
+        h = h.view(h.size(0), -1)
+        mu = self.ln_u(h)
+        log_sigma2 = self.ln_logvar(h)
         std = torch.exp(0.5*log_sigma2)
         eps = torch.randn_like(std)
-        z =  eps.mul(std).add_(mu)
+        z = eps.mul(std).add_(mu)
         # ========================
 
         return z, mu, log_sigma2
@@ -152,8 +181,13 @@ class VAE(nn.Module):
         # 1. Convert latent to features.
         # 2. Apply features decoder.
         # ====== YOUR CODE: ======
-        h_1 = self.linear_decode(z)
-        x_rec = h_1.reshape((1,self.in_size[0],self.in_size[1],-1))
+        #h_1 = z.reshape(-1, self.z_dim)
+        #h_rec = self.ln_rec(z)
+        #x_rec = self.ln_rec(h_1)
+
+        h_rec = self.ln_rec(z)
+        h_rec = h_rec.view(h_rec.size(0), *self.h_shape)
+        x_rec = self.features_decoder(h_rec)
         # ========================
 
         # Scale to [-1, 1] (same dynamic range as original images).
@@ -198,9 +232,9 @@ def vae_loss(x, xr, z_mu, z_log_sigma2, x_sigma2):
     # Remember that the covariance matrix of the posterior is diagonal.
     # ====== YOUR CODE: ======
     N = x.shape[0]
-    loss = nn.MSELoss()
-    data_loss = loss(xr, x) / x_sigma2
-    kldiv_loss = torch.sum(-1 - z_log_sigma2 + torch.pow(z_mu, 2) + z_log_sigma2.exp()) / N
+    MSE_loss = nn.MSELoss()
+    data_loss = MSE_loss(xr, x) / x_sigma2
+    kldiv_loss = torch.mean(-1 - z_log_sigma2 + torch.pow(z_mu, 2) + z_log_sigma2.exp())
     loss = data_loss + kldiv_loss
     # =======================
 
