@@ -85,7 +85,22 @@ class Trainer(abc.ABC):
             # - Implement early stopping. This is a very useful and
             #   simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            epoch_result = self.train_epoch(dl_train, **kw)
+            train_loss.extend(epoch_result.losses)
+            train_acc.append(epoch_result.accuracy)
+
+            epoch_result = self.test_epoch(dl_test, **kw)
+            test_loss.extend(epoch_result.losses)
+            test_acc.append(epoch_result.accuracy)
+
+            # if there is no improvement or nan loss then stop the training
+            if early_stopping:
+                losses = [float(l) for l in test_loss]
+                if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
+                    actual_num_epochs = epoch
+                    break
+
+            actual_num_epochs = epoch
             # ========================
 
             # Save model checkpoint if requested
@@ -207,14 +222,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.hidden_state = None
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.hidden_state = None
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -231,7 +246,23 @@ class RNNTrainer(Trainer):
         # - Update params
         # - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_scores, self.hidden_state = self.model(x, self.hidden_state)
+
+        # transpose for the CrossEntropy
+        y_scores = torch.transpose(y_scores, 1, 2)
+        #
+        # Compute and print loss
+        loss = self.loss_fn(y_scores, y)
+
+        # Zero gradients, perform a backward pass, and update the weights.
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.hidden_state.detach_()
+
+        y_pred = torch.argmax(y_scores, dim=1)
+        num_correct = torch.sum(y == y_pred)
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -250,6 +281,16 @@ class RNNTrainer(Trainer):
             # - Loss calculation
             # - Calculate number of correct predictions
             # ====== YOUR CODE: ======
+            y_scores, self.hidden_state = self.model(x, self.hidden_state)
+
+            # transpose for the CrossEntropy
+            y_scores = torch.transpose(y_scores, 1, 2)
+
+            # Compute the loss
+            loss = self.loss_fn(y_scores, y)
+
+            y_pred = torch.argmax(y_scores, dim=1)
+            num_correct = torch.sum(y == y_pred)
             raise NotImplementedError()
             # ========================
 
