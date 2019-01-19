@@ -85,13 +85,13 @@ class Trainer(abc.ABC):
             # - Implement early stopping. This is a very useful and
             #   simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            epoch_result = self.train_epoch(dl_train, **kw)
-            train_loss.extend(epoch_result.losses)
-            train_acc.append(epoch_result.accuracy)
+            train_result = self.train_epoch(dl_train, verbose=verbose)
+            train_loss.extend(train_result.losses)
+            train_acc.append(train_result.accuracy)
 
-            epoch_result = self.test_epoch(dl_test, **kw)
-            test_loss.extend(epoch_result.losses)
-            test_acc.append(epoch_result.accuracy)
+            test_result = self.test_epoch(dl_test, verbose=verbose)
+            test_loss.extend(test_result.losses)
+            test_acc.append(test_result.accuracy)
 
             # if there is no improvement or nan loss then stop the training
             if early_stopping:
@@ -291,7 +291,6 @@ class RNNTrainer(Trainer):
 
             y_pred = torch.argmax(y_scores, dim=1)
             num_correct = torch.sum(y == y_pred)
-            raise NotImplementedError()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)

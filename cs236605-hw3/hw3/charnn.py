@@ -197,7 +197,7 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
             prob = hot_softmax(y[0, -1, :], temperature=T)
             x_idx = torch.multinomial(prob, num_samples=1)
             out_text += idx_to_char[int(x_idx)]
-            x = torch.unsqueeze(chars_to_onehot(out_text[-1], char_to_idx), 0).float()
+            x = torch.unsqueeze(chars_to_onehot(out_text[-1], char_to_idx), 0).float().to(device)
     # ========================
 
     return out_text
