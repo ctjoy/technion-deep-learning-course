@@ -9,6 +9,7 @@ from typing import Callable, Any
 from pathlib import Path
 from cs236605.train_results import BatchResult, EpochResult, FitResult
 
+import numpy as np
 
 class Trainer(abc.ABC):
     """
@@ -85,22 +86,53 @@ class Trainer(abc.ABC):
             # - Implement early stopping. This is a very useful and
             #   simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            train_result = self.train_epoch(dl_train, verbose=verbose)
+
+            train_result = self.train_epoch(dl_train, **kw)
             train_loss.extend(train_result.losses)
             train_acc.append(train_result.accuracy)
-
-            test_result = self.test_epoch(dl_test, verbose=verbose)
+            test_result = self.test_epoch(dl_test, **kw)
             test_loss.extend(test_result.losses)
             test_acc.append(test_result.accuracy)
 
-            # if there is no improvement or nan loss then stop the training
-            if early_stopping:
-                losses = [float(l) for l in test_loss]
-                if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
-                    actual_num_epochs = epoch
-                    break
+            min_delta = 0.5
+            #The first epoch ends, set the best epoch as test_acc[0]
+            if best_acc == None:
+                best_acc = test_acc[-1]
+                save_checkpoint = True
+            # In the following epoch, if the test_acc oscillates little around the best_acc, then
+            # it means that there is no improvement. Otherwise, this epoch should be maintained.
+            else:
+                if test_acc[-1] - min_delta < best_acc:
+                    epochs_without_improvement += 1
+                    save_checkpoint = False
+                else:
+                    epochs_without_improvement = 0
+                    best_acc = test_acc[-1]
+                    save_checkpoint = True
+            print("checkpoint_filename")
+            print(checkpoint_filename)
+            # Decide whether to early stop or not. If early stopping, store the value in the checkpoints_final file.
+            if epochs_without_improvement > early_stopping:
+                break
 
-            actual_num_epochs = epoch
+            #Joy's code
+            # train_result = self.train_epoch(dl_train, verbose=verbose)
+            # train_loss.extend(train_result.losses)
+            # train_acc.append(train_result.accuracy)
+            #
+            # test_result = self.test_epoch(dl_test, verbose=verbose)
+            # test_loss.extend(test_result.losses)
+            # test_acc.append(test_result.accuracy)
+            #
+            # # if there is no improvement or nan loss then stop the training
+            # if early_stopping:
+            #     losses = [float(l) for l in test_loss]
+            #     if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
+            #         actual_num_epochs = epoch
+            #         break
+            #
+            # actual_num_epochs = epoch
+
             # ========================
 
             # Save model checkpoint if requested
@@ -302,7 +334,20 @@ class VAETrainer(Trainer):
         x = x.to(self.device)  # Image batch (N,C,H,W)
         # TODO: Train a VAE on one batch.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #forward pass
+        xr, mu, log_sigma2 = self.model(x)
+
+        # Print the loss
+        loss,data_loss,kldiv_loss = self.loss_fn(x=x, xr=xr, z_mu=mu, z_log_sigma2=log_sigma2)
+
+        # Zero gradients, perform a backward pass, and update the weights.
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Compute loss
+        xr, mu, log_sigma2 = self.model(x)
+        loss, data_loss, kldiv_loss = self.loss_fn(x=x, xr=xr, z_mu=mu, z_log_sigma2=log_sigma2)
         # ========================
 
         return BatchResult(loss.item(), 1/data_loss.item())
@@ -314,7 +359,8 @@ class VAETrainer(Trainer):
         with torch.no_grad():
             # TODO: Evaluate a VAE on one batch.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            xr, mu, log_sigma2 = self.model(x)
+            loss, data_loss, kldiv_loss = self.loss_fn(x=x, xr=xr, z_mu=mu, z_log_sigma2=log_sigma2)
             # ========================
 
         return BatchResult(loss.item(), 1/data_loss.item())

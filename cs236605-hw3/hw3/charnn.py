@@ -55,10 +55,10 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     """
     Embed a sequence of chars as a a tensor containing the one-hot encoding
     of each char. A one-hot encoding means that each char is represented as
-    a tensor of zeros with a single '1' element at the index in the tesnsor
+    a tensor of zeros with a single '1' element at the index in the tensor
     corresponding to the index of that char.
     :param text: The text to embed.
-    :param char_to_idx: Mapping from each char in the sequence to it's
+    :param char_to_idx: Mapping from each char in the sequence to its
     unique index.
     :return: Tensor of shape (N, D) where N is the length of the sequence
     and D is the number of unique chars in the sequence. The dtype of the
@@ -66,10 +66,25 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     """
     # TODO: Implement the embedding.
     # ====== YOUR CODE: ======
+    #Sally's code
+    # integer_encoded = torch.IntTensor([char_to_idx[char] for char in text])
+    # N = len(text)
+    # D_temp = int(torch.max(integer_encoded))
+    # D = D_temp + 1
+    # tensor = torch.ones((N,D), dtype=torch.int8)
+    # result_list = []
+    # #integer encode input data
+    # for value in integer_encoded:
+    #     letter = [0 for _ in range(D)]
+    #     letter[value] = 1
+    #     result_list.append(letter)
+    # result = tensor.new_tensor(result_list)
+
     N, D = len(text), len(char_to_idx)
     result = torch.zeros((N, D), dtype=torch.int8)
     for i, c in enumerate(text):
         result[i, char_to_idx[c]] = 1
+
     # ========================
     return result
 
@@ -119,6 +134,13 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int,
     # Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
     num_samples = (len(text) - 1) // seq_len
+    #Sally's code
+    # embedded_text = chars_to_onehot(text, char_to_idx)[0: seq_len * num_samples]
+    # text_deleted = text[1: seq_len * num_samples + 1]
+    # labels_all = torch.IntTensor([char_to_idx[char] for char in text_deleted])
+    # samples = torch.stack(torch.split(embedded_text, seq_len, dim=0))
+    # labels = torch.stack(torch.split(labels_all, seq_len, dim=0))
+
     embed_text = chars_to_onehot(text, char_to_idx).to(device)
     char_labels = torch.argmax(embed_text, dim=1).to(device)
 
@@ -135,6 +157,7 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int,
 
     samples = torch.stack(samples)
     labels = torch.stack(labels)
+
     # ========================
     return samples, labels
 
@@ -241,6 +264,7 @@ class MultilayerGRU(nn.Module):
         #     then call self.register_parameter() on them. Also make
         #     sure to initialize them. See functions in torch.nn.init.
         # ====== YOUR CODE: ======
+
         for layer in range(n_layers):
             # Compute cuurent layer's input size
             layer_input_size = in_dim if layer == 0 else h_dim
@@ -263,6 +287,7 @@ class MultilayerGRU(nn.Module):
         w_y = nn.Linear(h_dim, out_dim, bias=True)
         self.layer_params.append((w_y))
         self.add_module('w_y', w_y)
+
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor=None):
