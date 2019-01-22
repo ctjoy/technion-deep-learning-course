@@ -22,7 +22,12 @@ class Discriminator(nn.Module):
         # You can then use either an affine layer or another conv layer to
         # flatten the features.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.hidden_size = 1024
+        W_out = in_size[1] / 16
+        H_out = in_size[2] / 16
+        self.input_size = int(W_out * H_out * self.hidden_size)
+        self.feature_encode = EncoderCNN(in_channels=in_size[0], out_channels=self.hidden_size)
+        self.linear = nn.Linear(self.input_size, 1)
         # ========================
 
     def forward(self, x):
@@ -35,7 +40,9 @@ class Discriminator(nn.Module):
         # No need to apply sigmoid to obtain probability - we'll combine it
         # with the loss due to improved numerical stability.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        h = self.feature_encode(x)
+        h = h.reshape(h.shape[0],-1)
+        y = self.linear(h)
         # ========================
         return y
 
@@ -56,7 +63,11 @@ class Generator(nn.Module):
         # section or implement something new.
         # You can assume a fixed image size.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.featuremap_size = featuremap_size
+        self.in_channels = 1024
+        self.hidden_dim = self.in_channels * self.featuremap_size * self.featuremap_size
+        self.ln_rec = torch.nn.Linear(self.z_dim, self.hidden_dim)
+        self.features_decoder = DecoderCNN(in_channels= self.in_channels, out_channels=out_channels)
         # ========================
 
     def sample(self, n, with_grad=False):
@@ -72,7 +83,10 @@ class Generator(nn.Module):
         # Generate n latent space samples and return their reconstructions.
         # Don't use a loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        torch.autograd.set_grad_enabled(with_grad)
+        z = torch.randn([n, self.z_dim], device=device, requires_grad=with_grad)
+        samples = self.forward(z)
+        torch.autograd.set_grad_enabled(True)
         # ========================
         return samples
 
@@ -86,10 +100,15 @@ class Generator(nn.Module):
         # Don't forget to make sure the output instances have the same scale
         # as the original (real) images.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # 1. Convert latent to features.
+        # 2. Apply features decoder.
+
+        # ====== YOUR CODE: ======
+        h_rec = self.ln_rec(z)
+        h_rec = h_rec.view(h_rec.size(0), -1 , self.featuremap_size, self.featuremap_size)
+        x = self.features_decoder(h_rec)
         # ========================
         return x
-
 
 def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     """
@@ -110,7 +129,11 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     # TODO: Implement the discriminator loss.
     # See torch's BCEWithLogitsLoss for a numerically stable implementation.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    criterion = nn.BCEWithLogitsLoss(weight=None, reduce=False)
+    real_labels =  label_noise * torch.rand(10) + data_label - (label_noise / 2)
+    fake_labels =  label_noise * torch.rand(10) + 1 - data_label - (label_noise / 2)
+    loss_data =  torch.mean(criterion(y_data,torch.FloatTensor(real_labels)))
+    loss_generated = torch.mean(criterion(y_generated,torch.FloatTensor(fake_labels)))
     # ========================
     return loss_data + loss_generated
 
@@ -129,7 +152,9 @@ def generator_loss_fn(y_generated, data_label=0):
     # Think about what you need to compare the input to, in order to
     # formulate the loss in terms of Binary Cross Entropy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    criterion = nn.BCEWithLogitsLoss(weight=None, reduce=False)
+    labels=[data_label]*len(y_generated)
+    loss=torch.mean(criterion(y_generated,torch.FloatTensor(labels)))
     # ========================
     return loss
 

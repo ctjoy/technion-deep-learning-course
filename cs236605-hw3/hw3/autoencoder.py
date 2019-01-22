@@ -93,10 +93,10 @@ class DecoderCNN(nn.Module):
         self.unpool_sz = 2
         in_filters = self.filters.copy()
         in_filters.insert(0, in_channels)
-        print(in_filters)
+        #print(in_filters)
         out_filters = self.filters.copy()
         out_filters.insert(3, out_channels)
-        print(out_filters)
+        #print(out_filters)
 
         for i, (in_dim, out_dim) in enumerate(zip(in_filters, out_filters)):
             modules.append(nn.ReLU())
@@ -165,7 +165,7 @@ class VAE(nn.Module):
         # ====== YOUR CODE: ======
         #h = x.reshape(-1,self.hidden_dim)
         h = self.features_encoder(x)
-
+        #print(h.size(0))
         h = h.view(h.size(0), -1)
         mu = self.ln_u(h)
         log_sigma2 = self.ln_logvar(h)
