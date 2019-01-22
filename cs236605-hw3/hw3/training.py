@@ -86,6 +86,7 @@ class Trainer(abc.ABC):
             # - Implement early stopping. This is a very useful and
             #   simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
+
             train_result = self.train_epoch(dl_train, **kw)
             train_loss.extend(train_result.losses)
             train_acc.append(train_result.accuracy)
@@ -112,15 +113,26 @@ class Trainer(abc.ABC):
             print(checkpoint_filename)
             # Decide whether to early stop or not. If early stopping, store the value in the checkpoints_final file.
             if epochs_without_improvement > early_stopping:
-                # checkpoint_filename = f'{checkpoints}_final.pt'
-                # if save_checkpoint and checkpoint_filename is not None:
-                #     saved_state = dict(best_acc=best_acc,
-                #                        ewi=epochs_without_improvement,
-                #                        model_state=self.model.state_dict())
-                #     torch.save(saved_state, checkpoint_filename)
-                #     print(f'*** Saved checkpoint {checkpoint_filename} '
-                #           f'at epoch {epoch+1}')
                 break
+
+            #Joy's code
+            # train_result = self.train_epoch(dl_train, verbose=verbose)
+            # train_loss.extend(train_result.losses)
+            # train_acc.append(train_result.accuracy)
+            #
+            # test_result = self.test_epoch(dl_test, verbose=verbose)
+            # test_loss.extend(test_result.losses)
+            # test_acc.append(test_result.accuracy)
+            #
+            # # if there is no improvement or nan loss then stop the training
+            # if early_stopping:
+            #     losses = [float(l) for l in test_loss]
+            #     if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
+            #         actual_num_epochs = epoch
+            #         break
+            #
+            # actual_num_epochs = epoch
+
             # ========================
 
             # Save model checkpoint if requested
@@ -242,14 +254,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.hidden_state = None
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.hidden_state = None
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -266,7 +278,23 @@ class RNNTrainer(Trainer):
         # - Update params
         # - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_scores, self.hidden_state = self.model(x, self.hidden_state)
+
+        # transpose for the CrossEntropy
+        y_scores = torch.transpose(y_scores, 1, 2)
+        #
+        # Compute and print loss
+        loss = self.loss_fn(y_scores, y)
+
+        # Zero gradients, perform a backward pass, and update the weights.
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.hidden_state.detach_()
+
+        y_pred = torch.argmax(y_scores, dim=1)
+        num_correct = torch.sum(y == y_pred)
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -285,7 +313,16 @@ class RNNTrainer(Trainer):
             # - Loss calculation
             # - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            y_scores, self.hidden_state = self.model(x, self.hidden_state)
+
+            # transpose for the CrossEntropy
+            y_scores = torch.transpose(y_scores, 1, 2)
+
+            # Compute the loss
+            loss = self.loss_fn(y_scores, y)
+
+            y_pred = torch.argmax(y_scores, dim=1)
+            num_correct = torch.sum(y == y_pred)
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
