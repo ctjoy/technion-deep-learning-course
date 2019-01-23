@@ -4,7 +4,7 @@ Use this module to write your answers to the questions in the notebook.
 Note: Inside the answer strings you can use Markdown format and also LaTeX
 math (delimited with $$).
 """
-
+import torch
 # ==============
 # Part 1 answers
 
@@ -14,8 +14,7 @@ def part1_generation_params():
     temperature = .0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    start_seq = "ACT I."
-    temperature = .1
+    raise NotImplementedError()
     # ========================
     return start_seq, temperature
 
@@ -125,16 +124,17 @@ def part3_gan_hyperparams():
         batch_size=0, z_dim=0,
         data_label=0, label_noise=0.0,
         discriminator_optimizer=dict(
-            type='',  # Any name in nn.optim like SGD, Adam
+            type='SGD',  # Any name in nn.optim like SGD, Adam
             lr=0.0,
         ),
         generator_optimizer=dict(
-            type='',  # Any name in nn.optim like SGD, Adam
+            type='SGD',  # Any name in nn.optim like SGD, Adam
             lr=0.0,
         ),
     )
     # TODO: Tweak the hyperparameters to train your GAN.
     # ====== YOUR CODE: ======
+
     hypers['batch_size'] = 32
     hypers['z_dim'] = 32
     hypers['data_label'] = 1
