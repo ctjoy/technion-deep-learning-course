@@ -134,14 +134,13 @@ def part3_gan_hyperparams():
     )
     # TODO: Tweak the hyperparameters to train your GAN.
     # ====== YOUR CODE: ======
-    hypers['batch_size'] = 64
-    hypers['z_dim'] = 128
+
+    hypers['batch_size'] = 32
+    hypers['z_dim'] = 32
     hypers['data_label'] = 1
-    hypers['label_noise'] = 0.3
-    # hypers['discriminator_optimizer']['type']= torch.optim.SGD
-    hypers['discriminator_optimizer']['lr'] = 0.0001
-    # hypers['generator_optimizer']['type'] = torch.optim.SGD
-    hypers['generator_optimizer']['lr'] = 0.0001
+    hypers['label_noise'] = 0.1
+    hypers['discriminator_optimizer'] = {'type': 'Adam', 'lr': 0.1 }
+    hypers['generator_optimizer'] = {'type': 'Adam', 'lr': 0.1 }
     # ========================
     return hypers
 
