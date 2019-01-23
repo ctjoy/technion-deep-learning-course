@@ -109,8 +109,7 @@ class Trainer(abc.ABC):
                     epochs_without_improvement = 0
                     best_acc = test_acc[-1]
                     save_checkpoint = True
-            print("checkpoint_filename")
-            print(checkpoint_filename)
+
             # Decide whether to early stop or not. If early stopping, store the value in the checkpoints_final file.
             if epochs_without_improvement > early_stopping:
                 break

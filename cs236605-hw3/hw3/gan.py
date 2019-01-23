@@ -83,9 +83,14 @@ class Generator(nn.Module):
         # Generate n latent space samples and return their reconstructions.
         # Don't use a loop.
         # ====== YOUR CODE: ======
+        #Enable or disable grads based on its argument
         torch.autograd.set_grad_enabled(with_grad)
+
+        #Generate n latent samples and return their reconstruction
         z = torch.randn([n, self.z_dim], device=device, requires_grad=with_grad)
         samples = self.forward(z)
+
+        #Enable gradient update exist for later setting
         torch.autograd.set_grad_enabled(True)
         # ========================
         return samples
@@ -174,7 +179,25 @@ def train_batch(dsc_model: Discriminator, gen_model: Generator,
     # 2. Calculate discriminator loss
     # 3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    dsc_optimizer.zero_grad()
+
+    #forward
+    real_batch = x_data
+    fake_batch = gen_model.sample(x_data.shape[0],with_grad=True)
+    assert real_batch.size() == fake_batch.size()
+
+    #Get the result for the real and fake images
+    real_targets = dsc_model(real_batch)
+    fake_targets = dsc_model(fake_batch.detach())
+    print(real_targets.size())
+    print(fake_targets.size())
+    #Calculate d loss and make a backward calculation to calculate the gradients
+    dsc_loss = dsc_loss_fn(real_targets,fake_targets)
+
+    #Train the weights using optimizer
+    dsc_loss.backward()
+    dsc_optimizer.step()
+
     # ========================
 
     # TODO: Generator update
@@ -182,7 +205,17 @@ def train_batch(dsc_model: Discriminator, gen_model: Generator,
     # 2. Calculate generator loss
     # 3. Update generator parameters
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    dsc_optimizer.zero_grad()
+
+    # forward
+    fake_targets = gen_model(fake_batch)
+
+    # Calculate g loss and make a backward calculation to calculate the gradients
+    gen_loss = gen_loss_fn(fake_targets)
+
+    # Train the weights using optimizer
+    gen_loss.backward()
+    gen_optimizer.step()
     # ========================
 
     return dsc_loss.item(), gen_loss.item()
