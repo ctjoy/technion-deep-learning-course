@@ -59,7 +59,7 @@ class Trainer(abc.ABC):
 
         best_acc = None
         epochs_without_improvement = 0
-
+        low_loss = None
         checkpoint_filename = None
         if checkpoints is not None:
             checkpoint_filename = f'{checkpoints}.pt'
@@ -94,19 +94,22 @@ class Trainer(abc.ABC):
             test_loss.extend(test_result.losses)
             test_acc.append(test_result.accuracy)
 
-            min_delta = 0.5
+            min_delta = 0.05
+
             #The first epoch ends, set the best epoch as test_acc[0]
-            if best_acc == None:
+            if low_loss == None:
                 best_acc = test_acc[-1]
+                low_loss = test_loss[-1]
                 save_checkpoint = True
-            # In the following epoch, if the test_acc oscillates little around the best_acc, then
+            # In the following epoch, if the test_loss oscillates little around the low_loss, then
             # it means that there is no improvement. Otherwise, this epoch should be maintained.
             else:
-                if test_acc[-1] - min_delta < best_acc:
+                if test_loss[-1] + min_delta > low_loss:
                     epochs_without_improvement += 1
                     save_checkpoint = False
                 else:
                     epochs_without_improvement = 0
+                    low_loss = test_loss[-1]
                     best_acc = test_acc[-1]
                     save_checkpoint = True
 
