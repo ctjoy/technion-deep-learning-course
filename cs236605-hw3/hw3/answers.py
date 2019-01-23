@@ -93,7 +93,7 @@ def part2_vae_hyperparams():
 
 part2_q1 = r"""
 **Your answer:**
-$\sigma^2$  is a hyper-parameter which determines the relative importance between data_loss and kl_divergence.
+$\sigma^2$  is a hyper-parameter which controls the regularization strength.
 
 Data loss is the difference between the reconstruction picture and the orginal data picture. It's the data-fitting
 term. The smaller $\sigma^2$ is, the effect of data loss  on the final loss is more  important. As a result, the generated 
