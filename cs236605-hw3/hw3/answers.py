@@ -14,7 +14,8 @@ def part1_generation_params():
     temperature = .0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    start_seq = 'ACT I'
+    temperature = 0.001
     # ========================
     return start_seq, temperature
 
@@ -138,9 +139,9 @@ def part3_gan_hyperparams():
     hypers['batch_size'] = 32
     hypers['z_dim'] = 32
     hypers['data_label'] = 1
-    hypers['label_noise'] = 0.1
-    hypers['discriminator_optimizer'] = {'type': 'Adam', 'lr': 0.1 }
-    hypers['generator_optimizer'] = {'type': 'Adam', 'lr': 0.1 }
+    hypers['label_noise'] = 0.5
+    hypers['discriminator_optimizer'] = {'type': 'Adam', 'lr': 0.0001, 'weight_decay': 0.001 }
+    hypers['generator_optimizer'] = {'type': 'Adam', 'lr': 0.0001, 'weight_decay': 0.001 }
     # ========================
     return hypers
 

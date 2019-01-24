@@ -116,25 +116,6 @@ class Trainer(abc.ABC):
             # Decide whether to early stop or not. If early stopping, store the value in the checkpoints_final file.
             if epochs_without_improvement > early_stopping:
                 break
-
-            #Joy's code
-            # train_result = self.train_epoch(dl_train, verbose=verbose)
-            # train_loss.extend(train_result.losses)
-            # train_acc.append(train_result.accuracy)
-            #
-            # test_result = self.test_epoch(dl_test, verbose=verbose)
-            # test_loss.extend(test_result.losses)
-            # test_acc.append(test_result.accuracy)
-            #
-            # # if there is no improvement or nan loss then stop the training
-            # if early_stopping:
-            #     losses = [float(l) for l in test_loss]
-            #     if str(losses[-1]) == 'nan' or len(set(losses[-early_stopping:])) <= 1:
-            #         actual_num_epochs = epoch
-            #         break
-            #
-            # actual_num_epochs = epoch
-
             # ========================
 
             # Save model checkpoint if requested
